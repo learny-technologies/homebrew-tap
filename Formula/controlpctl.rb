@@ -25,9 +25,8 @@ class Controlpctl < Formula
            "--clobber"
 
     wheel = release_dir / wheel_name
-    if Digest::SHA256.file(wheel).hexdigest != RELEASE_SHA256
-      odie "Control Plane release checksum mismatch"
-    end
+    actual_digest = Digest::SHA256.file(wheel).hexdigest
+    odie "Control Plane release checksum mismatch" if actual_digest != RELEASE_SHA256
 
     venv = virtualenv_create(libexec, "python3.12")
     venv.pip_install wheel
