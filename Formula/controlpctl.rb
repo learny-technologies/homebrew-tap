@@ -1,6 +1,8 @@
 class Controlpctl < Formula
   desc "Learny Technologies Control Plane command-line client"
   homepage "https://github.com/learny-technologies/control-plane-workspace"
+  url "https://github.com/learny-technologies/homebrew-tap/archive/refs/tags/controlpctl-bootstrap-0.2.0.tar.gz"
+  sha256 "d520048952b9391f4c60968d8069f39ae7fa64b17ed3773cfd8cddced2dc7829"
   version "0.2.0"
   license "Proprietary"
 
