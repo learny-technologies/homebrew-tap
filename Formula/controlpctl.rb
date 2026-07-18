@@ -2,12 +2,12 @@ class Controlpctl < Formula
   desc "Learny Technologies Control Plane command-line client"
   homepage "https://github.com/learny-technologies/control-plane-workspace"
   url "https://github.com/learny-technologies/homebrew-tap/archive/refs/tags/controlpctl-bootstrap-0.2.0.tar.gz"
-  version "0.2.2"
+  version "0.2.3"
   sha256 "d520048952b9391f4c60968d8069f39ae7fa64b17ed3773cfd8cddced2dc7829"
   license "Proprietary"
 
   CONTROL_PLANE_REPOSITORY = "learny-technologies/control-plane-workspace".freeze
-  RELEASE_SHA256 = "574d85cb573d80b3b23accd2bbbd2639a3f222893585c5588089349681f7d219".freeze
+  RELEASE_SHA256 = "b4124c26ff3aa43e78b70dde3b30c65afb782607354ef5e55f97cfdf4efed34d".freeze
 
   depends_on "gh"
   depends_on "python@3.12"
