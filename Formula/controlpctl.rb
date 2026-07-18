@@ -16,7 +16,8 @@ class Controlpctl < Formula
     token = ENV.fetch("HOMEBREW_GITHUB_API_TOKEN", "")
     odie "Pass a GitHub token with repo access through HOMEBREW_GITHUB_API_TOKEN" if token.empty?
     ENV["GH_TOKEN"] = token
-    odie "GitHub token cannot read the private Control Plane release" unless system "gh", "auth", "status"
+    authorized = system "gh", "auth", "status"
+    odie "GitHub token cannot read the private Control Plane release" unless authorized
 
     wheel_name = "controlp-#{version}-py3-none-any.whl"
     release_dir = buildpath / "release"
