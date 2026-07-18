@@ -13,7 +13,10 @@ class Controlpctl < Formula
   depends_on "python@3.12"
 
   def install
-    odie "Sign in first with: gh auth login" unless system "gh", "auth", "status"
+    token = ENV.fetch("HOMEBREW_GITHUB_API_TOKEN", "")
+    odie "Pass a GitHub token with repo access through HOMEBREW_GITHUB_API_TOKEN" if token.empty?
+    ENV["GH_TOKEN"] = token
+    odie "GitHub token cannot read the private Control Plane release" unless system "gh", "auth", "status"
 
     wheel_name = "controlp-#{version}-py3-none-any.whl"
     release_dir = buildpath / "release"

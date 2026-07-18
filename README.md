@@ -12,13 +12,18 @@ repository:
 gh auth login
 ```
 
-Install or update the CLI:
+Install or update the CLI in one command. The command derives a short-lived process environment
+value from the Keychain-backed GitHub CLI session; it does not write the token to the shell profile,
+tap, or Homebrew configuration:
 
 ```bash
-brew install learny-technologies/tap/controlpctl
-brew upgrade controlpctl
+HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)" \
+  brew install learny-technologies/tap/controlpctl
+
+HOMEBREW_GITHUB_API_TOKEN="$(gh auth token)" \
+  brew upgrade controlpctl
 ```
 
 The formula uses `gh release download` to obtain the exact private release wheel, verifies its
 pinned SHA-256 digest, and installs it in an isolated Python environment. No GitHub token is stored
-in this repository or passed through a shell environment variable.
+in this repository or Homebrew configuration.
