@@ -5,6 +5,14 @@ metadata:
   profiles: [package-release]
 localValidation:
   scopes:
+    - id: automation-contract
+      paths:
+        - ".github/workflows/**"
+        - "scripts/validate_local.py"
+        - "automation.yaml"
+      commands:
+        - "actionlint"
+        - "git diff --check"
     - id: formula
       paths:
         - "Formula/**"
