@@ -1,0 +1,25 @@
+apiVersion: automation.learny.technology/v1alpha1
+kind: RepositoryAutomation
+metadata:
+  repository: learny-technologies/homebrew-tap
+  profiles: [package-release]
+localValidation:
+  scopes:
+    - id: formula
+      paths:
+        - "Formula/**"
+      commands:
+        - "brew style Formula/controlpctl.rb"
+        - "brew audit --strict --except=license controlpctl"
+    - id: documentation
+      paths:
+        - "README.md"
+        - "automation.yaml"
+      commands:
+        - "git diff --check"
+sourceGate:
+  enabled: true
+  checkName: Validation gate
+artifacts: []
+delivery:
+  pipelines: []
