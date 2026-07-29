@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import fnmatch
 import json
 import os
@@ -15,7 +16,17 @@ from pathlib import Path
 
 REPOSITORY = "learny-technologies/homebrew-tap"
 SCOPES = json.loads(
-    '[{"id":"automation-contract","paths":[".github/workflows/**","scripts/validate_local.py","automation.yaml"],"commands":["actionlint","git diff --check"]},{"id":"formula","paths":["Formula/**"],"commands":["brew style Formula/controlpctl.rb","brew audit --strict --except=license controlpctl"]},{"id":"documentation","paths":["README.md","automation.yaml"],"commands":["git diff --check"]}]'
+    base64.b64decode(
+        "W3siaWQiOiJhdXRvbWF0aW9uLWNvbnRyYWN0IiwicGF0aHMiOlsiLmdpdGh1Yi93"
+        "b3JrZmxvd3MvKioiLCJzY3JpcHRzL3ZhbGlkYXRlX2xvY2FsLnB5IiwiYXV0b21h"
+        "dGlvbi55YW1sIl0sImNvbW1hbmRzIjpbImFjdGlvbmxpbnQiLCJnaXQgZGlmZiAt"
+        "LWNoZWNrIl19LHsiaWQiOiJmb3JtdWxhIiwicGF0aHMiOlsiRm9ybXVsYS8qKiJd"
+        "LCJjb21tYW5kcyI6WyJicmV3IHN0eWxlIEZvcm11bGEvY29udHJvbHBjdGwucmIi"
+        "LCJicmV3IGF1ZGl0IC0tc3RyaWN0IC0tZXhjZXB0PWxpY2Vuc2UgY29udHJvbHBj"
+        "dGwiXX0seyJpZCI6ImRvY3VtZW50YXRpb24iLCJwYXRocyI6WyJSRUFETUUubWQi"
+        "LCJhdXRvbWF0aW9uLnlhbWwiXSwiY29tbWFuZHMiOlsiZ2l0IGRpZmYgLS1jaGVj"
+        "ayJdfV0="
+    )
 )
 
 
@@ -54,14 +65,13 @@ def changed_files(base: str, head: str) -> tuple[str, list[str]]:
     return merge_base, [item for item in output.splitlines() if item]
 
 
+def matches_any(path: str, patterns: list[str]) -> bool:
+    return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+
+
 def scope_selected(scope: dict[str, object], changed: list[str], run_all: bool) -> bool:
-    if run_all:
-        return True
     patterns = [str(item) for item in scope["paths"]]
-    for path in changed:
-        if any(fnmatch.fnmatch(path, pattern) for pattern in patterns):
-            return True
-    return False
+    return run_all or any(matches_any(path, patterns) for path in changed)
 
 
 def selected_scopes(changed: list[str], run_all: bool) -> list[dict[str, object]]:
