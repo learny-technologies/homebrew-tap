@@ -13,16 +13,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-# fmt: off
-REPOSITORY = 'learny-technologies/homebrew-tap'
-SCOPES = [{'id': 'formula',
-  'paths': ['Formula/**'],
-  'commands': ['brew style Formula/controlpctl.rb',
-               'brew audit --strict --except=license controlpctl']},
- {'id': 'documentation',
-  'paths': ['README.md', 'automation.yaml'],
-  'commands': ['git diff --check']}]
-# fmt: on
+REPOSITORY = "learny-technologies/homebrew-tap"
+SCOPES = json.loads(
+    '[{"id":"automation-contract","paths":[".github/workflows/**","scripts/validate_local.py","automation.yaml"],"commands":["actionlint","git diff --check"]},{"id":"formula","paths":["Formula/**"],"commands":["brew style Formula/controlpctl.rb","brew audit --strict --except=license controlpctl"]},{"id":"documentation","paths":["README.md","automation.yaml"],"commands":["git diff --check"]}]'
+)
 
 
 def command(*args: str, capture: bool = True) -> str:
@@ -47,29 +41,67 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def changed_files(base: str, head: str) -> list[str]:
+def changed_files(base: str, head: str) -> tuple[str, list[str]]:
     merge_base = command("git", "merge-base", base, head)
-    output = command("git", "diff", "--name-only", "--diff-filter=ACMR", merge_base, head)
-    return [item for item in output.splitlines() if item]
+    output = command(
+        "git",
+        "diff",
+        "--name-only",
+        "--diff-filter=ACMRD",
+        merge_base,
+        head,
+    )
+    return merge_base, [item for item in output.splitlines() if item]
 
 
 def scope_selected(scope: dict[str, object], changed: list[str], run_all: bool) -> bool:
     if run_all:
         return True
     patterns = [str(item) for item in scope["paths"]]
-    return any(fnmatch.fnmatch(path, pattern) for path in changed for pattern in patterns)
+    for path in changed:
+        if any(fnmatch.fnmatch(path, pattern) for pattern in patterns):
+            return True
+    return False
+
+
+def selected_scopes(changed: list[str], run_all: bool) -> list[dict[str, object]]:
+    if run_all:
+        return list(SCOPES)
+    automation_scopes = []
+    for scope in SCOPES:
+        if str(scope["id"]) == "automation-contract":
+            automation_scopes.append(scope)
+    if automation_scopes and changed:
+        contract_only = all(
+            any(scope_selected(scope, [path], False) for scope in automation_scopes)
+            for path in changed
+        )
+        if contract_only:
+            return automation_scopes
+    return [scope for scope in SCOPES if scope_selected(scope, changed, False)]
+
+
+def rendered_command(value: object, merge_base: str, head: str) -> str:
+    rendered = str(value)
+    if rendered == "git diff --check":
+        return f"git diff --check {merge_base}..{head}"
+    return rendered
 
 
 def exact_remote_source() -> tuple[str, str, str]:
     if command("git", "status", "--porcelain"):
-        raise RuntimeError("commit or remove local changes before submitting validation evidence")
+        message = "commit or remove local changes before submitting validation evidence"
+        raise RuntimeError(message)
     revision = command("git", "rev-parse", "HEAD").lower()
     branch = command("git", "branch", "--show-current")
     if not branch:
         raise RuntimeError("local validation submission requires a named branch")
-    remote_revision = command("git", "ls-remote", "origin", f"refs/heads/{branch}").split()
+    remote_ref = f"refs/heads/{branch}"
+    remote_revision = command("git", "ls-remote", "origin", remote_ref).split()
     if not remote_revision or remote_revision[0].lower() != revision:
-        raise RuntimeError("push the exact validated HEAD to origin before submitting evidence")
+        raise RuntimeError(
+            "push the exact validated HEAD to origin before submitting validation evidence"
+        )
     tree = command("git", "rev-parse", f"{revision}^{{tree}}").lower()
     return revision, f"refs/heads/{branch}", tree
 
@@ -77,10 +109,11 @@ def exact_remote_source() -> tuple[str, str, str]:
 def main() -> int:
     args = parse_args()
     try:
-        if command("git", "rev-parse", args.head) != command("git", "rev-parse", "HEAD"):
+        head_revision = command("git", "rev-parse", args.head).lower()
+        if head_revision != command("git", "rev-parse", "HEAD").lower():
             raise RuntimeError("--head must resolve to the current HEAD")
-        changed = changed_files(args.base, args.head)
-        selected = [scope for scope in SCOPES if scope_selected(scope, changed, args.all)]
+        merge_base, changed = changed_files(args.base, head_revision)
+        selected = selected_scopes(changed, args.all)
         if not selected:
             raise RuntimeError("no local validation scope matches the current diff")
         results: list[dict[str, object]] = []
@@ -88,12 +121,12 @@ def main() -> int:
         seen_commands: set[str] = set()
         for scope in selected:
             for value in scope["commands"]:
-                rendered = str(value)
+                rendered = rendered_command(value, merge_base, head_revision)
                 if rendered in seen_commands:
                     continue
                 seen_commands.add(rendered)
                 print(f"+ {rendered}", flush=True)
-                completed = subprocess.run(rendered, shell=True, text=True)
+                completed = subprocess.run(rendered, shell=True, text=True, check=False)
                 results.append(
                     {
                         "command": rendered,
