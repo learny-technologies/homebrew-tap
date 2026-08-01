@@ -1,16 +1,13 @@
-# frozen_string_literal: true
-
-# Homebrew formula for the Learny Technologies Control Plane CLI.
 class Controlpctl < Formula
   desc "Learny Technologies Control Plane command-line client"
   homepage "https://github.com/learny-technologies/control-plane-workspace"
   url "https://github.com/learny-technologies/homebrew-tap/archive/refs/tags/controlpctl-bootstrap-0.2.0.tar.gz"
-  version "0.2.5"
+  version "0.2.6"
   sha256 "d520048952b9391f4c60968d8069f39ae7fa64b17ed3773cfd8cddced2dc7829"
   license "Proprietary"
 
-  CONTROL_PLANE_REPOSITORY = "learny-technologies/control-plane-workspace"
-  RELEASE_SHA256 = "a15f5958b52a12eeeebe75f65befe85cd11b8769c0b1dd9b0ed450c13b0a6064"
+  CONTROL_PLANE_REPOSITORY = "learny-technologies/control-plane-workspace".freeze
+  RELEASE_SHA256 = "7094e49a979c277dd540a2414a71f4d0218731885184c22e44162faea439520c".freeze
 
   depends_on "gh"
   depends_on "python@3.12"
